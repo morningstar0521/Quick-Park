@@ -136,10 +136,13 @@ Quick Park addresses the inefficiencies of traditional parking management by dig
 ![Admin Dashboard](screenshots/admin-dashboard.png)
 
 ### Parking Lot Management
-![Manage Lots](screenshots/manage-lots.png)
+![Manage Lots](screenshots/manage-parking-lots.png)
 
-### Reports
-![Reports](screenshots/reports.png)
+### Admin Reports
+![Admin Reports](screenshots/admin-reports.png)
+
+### User Reports
+![User Reports](screenshots/user-reports.png)
 
 **Live Demo**: [Add deployment URL here]
 
