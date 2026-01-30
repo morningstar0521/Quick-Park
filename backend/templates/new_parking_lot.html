@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            text-align: center;
+        }
+        .details {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>New Parking Lot Available!</h1>
+        </div>
+        <p>Dear {{ user_name }},</p>
+        <p>We're excited to announce a new parking lot is now available for booking!</p>
+        
+        <div class="details">
+            <h2>{{ lot_name }}</h2>
+            <p><strong>Location:</strong> {{ lot_location }}</p>
+            <p><strong>Total Spots:</strong> {{ total_spots }}</p>
+            <p><strong>Rate per Hour:</strong> ₹{{ rate_per_hour }}</p>
+            <p><strong>Description:</strong> {{ description }}</p>
+        </div>
+
+        <p>Book your spot now to secure convenient parking!</p>
+        
+        <p>Best regards,<br>Your QuickPark App Team</p>
+    </div>
+</body>
+</html>
