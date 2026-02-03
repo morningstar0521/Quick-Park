@@ -31,12 +31,13 @@ Quick Park addresses the inefficiencies of traditional parking management by dig
 
 ### User Features
 - Browse available parking lots with real-time spot availability
+- **Dual booking mode**: Auto-assign OR manually select your preferred spot
 - Book parking spots with vehicle number registration
 - Park-out with automatic duration calculation and billing
 - View booking history with detailed receipts
 - Download parking reports (PDF/CSV)
 - Profile management with avatar support
-- Email notifications for booking confirmations
+- Email notifications with **QR code** for booking confirmations (scannable for all details)
 
 ### Admin Features
 - Dashboard with key metrics (total spots, occupancy, revenue, active bookings)
@@ -52,7 +53,8 @@ Quick Park addresses the inefficiencies of traditional parking management by dig
 ### Technical Highlights
 - Asynchronous task processing with Celery
 - Redis-based caching for optimized performance
-- Automated email delivery (booking confirmations, receipts, monthly reports)
+- Automated email delivery (booking confirmations with QR codes, receipts, monthly reports)
+- QR code generation for booking verification
 - PDF receipt generation with ReportLab
 - Timezone-aware datetime handling (Asia/Kolkata)
 
@@ -288,6 +290,7 @@ Content-Type: application/json
 {
   "lot_id": 1,
   "vehicle_number": "MH01AB1234"
+  "spot_id": 5  // Optional - for manual spot selection
 }
 ```
 
@@ -380,7 +383,6 @@ vehicle_parking_app_23f2002762/
 
 - [ ] **Payment Integration**: Razorpay/Stripe for online payments
 - [ ] **Mobile Application**: React Native or Flutter companion app
-- [ ] **QR Code Entry/Exit**: Scan-based parking validation
 - [ ] **Dynamic Pricing**: Time-based and demand-based rate adjustments
 - [ ] **Multi-tenancy**: Support for multiple parking operators
 - [ ] **Analytics Dashboard**: Advanced charts with historical trends
@@ -393,9 +395,9 @@ vehicle_parking_app_23f2002762/
 
 **Shubh Ghiya**
 
-- GitHub: [github.com/shubhghiya](https://github.com/shubhghiya)
-- LinkedIn: [linkedin.com/in/shubhghiya](https://linkedin.com/in/shubhghiya)
-- Email: shubhghiya@example.com
+- GitHub: [github.com/shubhghiya](https://github.com/morningstar0521)
+- LinkedIn: [linkedin.com/in/shubhghiya](https://linkedin.com/in/shubh-g-334a2a281)
+- Email: ghiyashubh23@gmail.com
 
 ---
 
