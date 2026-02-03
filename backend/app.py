@@ -19,7 +19,31 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy import func
 from tasks import send_receipt_email_task, notify_new_parking_lot
 from jinja2 import Template
+import qrcode
+import base64
+from io import BytesIO
+import json
 
+
+
+def generate_booking_qr(booking_data):
+    try:
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(json.dumps(booking_data))
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+        buffer = BytesIO()
+        img.save(buffer, format='PNG')
+        buffer.seek(0)
+        return base64.b64encode(buffer.getvalue()).decode('utf-8')
+    except Exception as e:
+        print(f"Error generating QR code: {e}")
+        return None
 
 
 def update_parking_spots_for_lot(lot):
@@ -882,6 +906,7 @@ def create_app():
             data = request.json or {}
             lot_id = data.get("lot_id")
             vehicle_number = data.get("vehicle_number", "")
+            spot_id = data.get("spot_id")
             
             if not lot_id:
                 return jsonify({"ok": False, "message": "Lot ID is required"}), 400
@@ -893,22 +918,38 @@ def create_app():
             
             if existing_booking:
                 return jsonify({"ok": False, "message": "You already have an active booking"}), 400
-            
-            available_spot = ParkingSpot.query.filter(
-                ParkingSpot.lot_id == lot_id,
-                ParkingSpot.is_booked == False
-            ).first()
-            
-            if not available_spot:
-                return jsonify({"ok": False, "message": "No available spots in this lot"}), 400
-            
-            spot_is_booked = Booking.query.filter(
-                Booking.spot_id == available_spot.id,
-                Booking.end_time.is_(None)
-            ).first()
-            
-            if spot_is_booked:
-                return jsonify({"ok": False, "message": "No available spots in this lot"}), 400
+            if spot_id:
+                selected_spot = ParkingSpot.query.get(spot_id)
+                if not selected_spot:
+                    return jsonify({"ok": False, "message": "Invalid parking spot"}), 400
+                if selected_spot.lot_id != lot_id:
+                    return jsonify({"ok": False, "message": "Spot does not belong to this lot"}), 400
+                
+                spot_is_booked = Booking.query.filter(
+                    Booking.spot_id == spot_id,
+                    Booking.end_time.is_(None)
+                ).first()
+                
+                if spot_is_booked or selected_spot.is_booked:
+                    return jsonify({"ok": False, "message": "Selected spot is no longer available"}), 400
+                
+                available_spot = selected_spot
+            else:
+                available_spot = ParkingSpot.query.filter(
+                    ParkingSpot.lot_id == lot_id,
+                    ParkingSpot.is_booked == False
+                ).first()
+                
+                if not available_spot:
+                    return jsonify({"ok": False, "message": "No available spots in this lot"}), 400
+                
+                spot_is_booked = Booking.query.filter(
+                    Booking.spot_id == available_spot.id,
+                    Booking.end_time.is_(None)
+                ).first()
+                
+                if spot_is_booked:
+                    return jsonify({"ok": False, "message": "No available spots in this lot"}), 400
             
             booking = Booking(
                 user_id=user_id,
@@ -945,6 +986,18 @@ def create_app():
                     sender="noreply@quickpark.com"
                 )
                 
+                qr_data = {
+                    "booking_id": booking.id,
+                    "lot_name": lot.name,
+                    "lot_address": f"{lot.address}, {lot.city}" if lot.address else "",
+                    "spot_number": spot.spot_number,
+                    "vehicle_number": vehicle_number,
+                    "start_time": booking.start_time.strftime("%Y-%m-%d %H:%M:%S"),
+                    "rate_per_hour": lot.rate_per_hour,
+                    "user_name": user.full_name
+                }
+                qr_code_base64 = generate_booking_qr(qr_data)
+                
                 msg.html = template.render(
                     user_name=user.full_name,
                     lot_name=lot.name,
@@ -952,7 +1005,8 @@ def create_app():
                     booking_id=booking.id,
                     vehicle_number=vehicle_number,
                     start_time=booking.start_time.strftime("%Y-%m-%d %H:%M:%S"),
-                    rate_per_hour=lot.rate_per_hour
+                    rate_per_hour=lot.rate_per_hour,
+                    qr_code=qr_code_base64
                 )
                 
                 mail.send(msg)
