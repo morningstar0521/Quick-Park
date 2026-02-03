@@ -21,6 +21,17 @@ Quick Park addresses the inefficiencies of traditional parking management by dig
 
 ---
 
+## Awards & Recognition
+
+🏆 **Best Course Project Award**  
+Certificate of Appreciation for **Best Course Project in Modern Application Development II**  
+*IIT Madras BS Degree Program* (Diploma Sept 2025)  
+Roll No: 23F2002762  
+
+🔗 [View Full Certificate (PDF)](https://drive.google.com/file/d/11tH0qdzI6fYCOCPydmAen6B1m8f3uiWo/view?usp=sharing)
+
+---
+
 ## Features
 
 ### Authentication and Security
