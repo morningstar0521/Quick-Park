@@ -31,6 +31,32 @@
             padding: 10px;
             background-color: #f9f9f9;
         }
+        .qr-section {
+            text-align: center;
+            margin: 25px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 10px;
+            border: 2px dashed #4CAF50;
+        }
+        .qr-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .qr-code {
+            display: inline-block;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .qr-instruction {
+            font-size: 12px;
+            color: #666;
+            margin-top: 15px;
+        }
     </style>
 </head>
 <body>
@@ -50,7 +76,17 @@
             <p><strong>Rate per Hour:</strong> ₹{{ rate_per_hour }}</p>
         </div>
 
-        <p>Please show this email when requested by parking staff.</p>
+        {% if qr_code %}
+        <div class="qr-section">
+            <div class="qr-title">📱 Your Booking QR Code</div>
+            <div class="qr-code">
+                <img src="data:image/png;base64,{{ qr_code }}" alt="Booking QR Code" width="180" height="180">
+            </div>
+            <p class="qr-instruction">Scan this QR code to view your complete booking details</p>
+        </div>
+        {% endif %}
+
+        <p>Please show this email or the QR code when requested by parking staff.</p>
         
         <p>Best regards,<br>Your QuickPark App Team</p>
     </div>
