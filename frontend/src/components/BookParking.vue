@@ -227,22 +227,67 @@
         </div>
 
         <div v-else class="layout-content">
+          <!-- Booking Mode Selection -->
+          <div class="booking-mode-section">
+            <h3 class="mode-section-title"><i class="fas fa-sliders-h me-2"></i>Choose Booking Method</h3>
+            <div class="mode-cards">
+              <div 
+                class="mode-card" 
+                :class="{ 'active': bookingMode === 'auto' }"
+                @click="setBookingMode('auto')">
+                <div class="mode-icon">
+                  <i class="fas fa-magic"></i>
+                </div>
+                <div class="mode-info">
+                  <h4 class="mode-title">Auto-Assign</h4>
+                  <p class="mode-desc">Let our system pick the best available spot for you</p>
+                </div>
+                <div class="mode-check" v-if="bookingMode === 'auto'">
+                  <i class="fas fa-check-circle"></i>
+                </div>
+              </div>
+              <div 
+                class="mode-card" 
+                :class="{ 'active': bookingMode === 'manual' }"
+                @click="setBookingMode('manual')">
+                <div class="mode-icon">
+                  <i class="fas fa-hand-pointer"></i>
+                </div>
+                <div class="mode-info">
+                  <h4 class="mode-title">Choose My Spot</h4>
+                  <p class="mode-desc">Select your preferred parking spot from the layout</p>
+                </div>
+                <div class="mode-check" v-if="bookingMode === 'manual'">
+                  <i class="fas fa-check-circle"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="parking-grid-section">
             <div class="grid-header">
               <h3 class="grid-title">Parking Layout</h3>
-              <p class="grid-subtitle">View all available and booked spots</p>
+              <p class="grid-subtitle" v-if="bookingMode === 'auto'">View all available and booked spots</p>
+              <p class="grid-subtitle" v-else>Click on an available spot to select it</p>
             </div>
 
             <div class="parking-grid horizontal-grid">
               <div 
                 v-for="spot in parkingSpots" 
                 :key="spot.id"
-                :class="['parking-spot-item', { 'available': spot.is_available, 'booked': !spot.is_available }]"
-                :title="getSpotTooltip(spot)">
+                :class="['parking-spot-item', { 
+                  'available': spot.is_available, 
+                  'booked': !spot.is_available,
+                  'selected': selectedSpot && selectedSpot.id === spot.id,
+                  'selectable': bookingMode === 'manual' && spot.is_available
+                }]"
+                :title="getSpotTooltip(spot)"
+                @click="handleSpotClick(spot)">
                 <div class="spot-content">
                   <div class="spot-number">{{ spot.spot_number }}</div>
                   <div class="spot-icon">
-                    <i v-if="spot.is_available" class="fas fa-check-circle"></i>
+                    <i v-if="selectedSpot && selectedSpot.id === spot.id" class="fas fa-check"></i>
+                    <i v-else-if="spot.is_available" class="fas fa-check-circle"></i>
                     <i v-else class="fas fa-times-circle"></i>
                   </div>
                 </div>
@@ -258,10 +303,15 @@
                 <div class="legend-color booked"></div>
                 <span>Booked Spot</span>
               </div>
+              <div class="legend-item" v-if="bookingMode === 'manual'">
+                <div class="legend-color selected"></div>
+                <span>Selected Spot</span>
+              </div>
             </div>
           </div>
 
-          <div class="auto-assignment-card">
+          <!-- Info card based on mode -->
+          <div v-if="bookingMode === 'auto'" class="auto-assignment-card">
             <div class="card-icon">
               <i class="fas fa-magic"></i>
             </div>
@@ -275,12 +325,31 @@
             </div>
           </div>
 
+          <div v-else class="manual-selection-card" :class="{ 'has-selection': selectedSpot }">
+            <div class="card-icon">
+              <i :class="selectedSpot ? 'fas fa-check-circle' : 'fas fa-hand-pointer'"></i>
+            </div>
+            <div class="card-content">
+              <h4 class="card-title" v-if="selectedSpot">Spot #{{ selectedSpot.spot_number }} Selected</h4>
+              <h4 class="card-title" v-else>Select a Spot</h4>
+              <p class="card-text" v-if="selectedSpot">You have selected parking spot #{{ selectedSpot.spot_number }}. Click Continue to proceed with booking.</p>
+              <p class="card-text" v-else>Click on any available (green) spot in the layout above to select it for your booking.</p>
+              <div class="available-info">
+                <i class="fas fa-parking"></i>
+                <span>{{ availableSpotsCount }} spots available</span>
+              </div>
+            </div>
+          </div>
+
           <div class="layout-actions">
             <button 
               class="btn-proceed-booking" 
               @click="proceedToBooking"
-              :disabled="availableSpotsCount === 0">
-              <i class="fas fa-arrow-right me-2"></i>Continue to Booking
+              :disabled="!canProceedToBooking">
+              <i class="fas fa-arrow-right me-2"></i>
+              <span v-if="bookingMode === 'manual' && selectedSpot">Continue with Spot #{{ selectedSpot.spot_number }}</span>
+              <span v-else-if="bookingMode === 'manual'">Select a Spot First</span>
+              <span v-else>Continue to Booking</span>
             </button>
           </div>
         </div>
@@ -315,7 +384,12 @@
               </div>
               <div class="summary-item">
                 <span class="summary-label">Spot Assignment</span>
-                <span class="summary-value">Auto-Assigned</span>
+                <span class="summary-value" v-if="bookingMode === 'manual' && selectedSpot">
+                  <i class="fas fa-hand-pointer me-1"></i>Spot #{{ selectedSpot.spot_number }} (Manual)
+                </span>
+                <span class="summary-value" v-else>
+                  <i class="fas fa-magic me-1"></i>Auto-Assigned
+                </span>
               </div>
             </div>
           </div>
@@ -415,6 +489,7 @@ export default {
       hasActiveBooking: false,
       activeBooking: null,
       searchQuery: '',
+      bookingMode: 'auto',
       selectedType: ''
     };
   },
@@ -424,6 +499,12 @@ export default {
     },
     bookedSpotsCount() {
       return this.parkingSpots.filter(spot => !spot.is_available).length;
+    },
+    canProceedToBooking() {
+      if (this.bookingMode === 'auto') {
+        return this.availableSpotsCount > 0;
+      }
+      return this.selectedSpot !== null;
     },
     filteredParkingLots() {
       let filtered = this.parkingLots;
@@ -508,6 +589,23 @@ export default {
       }
     },
 
+    setBookingMode(mode) {
+      this.bookingMode = mode;
+      if (mode === 'auto') {
+        this.selectedSpot = null;
+      }
+    },
+
+    handleSpotClick(spot) {
+      if (this.bookingMode === 'manual' && spot.is_available) {
+        if (this.selectedSpot && this.selectedSpot.id === spot.id) {
+          this.selectedSpot = null;
+        } else {
+          this.selectedSpot = spot;
+        }
+      }
+    },
+
     selectSpot(spot) {
       if (spot.is_available) {
         this.selectedSpot = spot;
@@ -515,8 +613,14 @@ export default {
     },
 
     getSpotTooltip(spot) {
+      if (this.selectedSpot && this.selectedSpot.id === spot.id) {
+        return `Spot ${spot.spot_number}: Selected - Click to deselect`;
+      }
       if (spot.is_available) {
-        return `Spot ${spot.spot_number}: Available - Click to select`;
+        if (this.bookingMode === 'manual') {
+          return `Spot ${spot.spot_number}: Available - Click to select`;
+        }
+        return `Spot ${spot.spot_number}: Available`;
       }
       return `Spot ${spot.spot_number}: Booked`;
     },
@@ -526,6 +630,10 @@ export default {
     },
 
     proceedToBooking() {
+      if (this.bookingMode === 'manual' && !this.selectedSpot) {
+        alert('Please select a parking spot first');
+        return;
+      }
       if (this.availableSpotsCount > 0) {
         this.bookingForm.vehicleNumber = ''; 
         this.currentView = 'booking';
@@ -538,18 +646,22 @@ export default {
         return;
       }
 
+      const spotInfo = this.bookingMode === 'manual' && this.selectedSpot 
+        ? `Spot #${this.selectedSpot.spot_number} (Your Selection)`
+        : 'Auto-assigned by system';
+      
       const confirmMessage = `
         🚗 BOOKING CONFIRMATION 🚗
         
         Parking Lot: ${this.selectedLot.name}
         Vehicle: ${this.bookingForm.vehicleNumber.trim()}
+        Spot: ${spotInfo}
         Rate: ₹${this.selectedLot.ratePerHour}/hour
         
         ⚠️ IMPORTANT:
         • You will be charged a minimum of ₹${this.selectedLot.ratePerHour} (1 hour)
         • Final cost will be calculated when you park out
         • Payment will be processed automatically
-        • Spot will be auto-assigned by our system
         
         Do you want to proceed with this booking?
       `;
@@ -563,14 +675,23 @@ export default {
           lot_id: this.selectedLot.id,
           vehicle_number: this.bookingForm.vehicleNumber.trim()
         };
+        
+        // Include spot_id for manual selection
+        if (this.bookingMode === 'manual' && this.selectedSpot) {
+          bookingData.spot_id = this.selectedSpot.id;
+        }
 
         const response = await this.$axios.post("http://127.0.0.1:5000/api/user/bookings", bookingData);
         
         if (response.data.ok) {
+          const spotAssignmentText = this.bookingMode === 'manual' 
+            ? 'Your selected parking spot has been booked:'
+            : 'Your parking spot has been auto-assigned:';
+          
           const successMessage = `
             ✅ BOOKING CONFIRMED! ✅
             
-            Your parking spot has been auto-assigned:
+            ${spotAssignmentText}
             • Spot: #${response.data.booking.spot_number}
             • Location: ${this.selectedLot.name}
             • Vehicle: ${this.bookingForm.vehicleNumber.trim()}
@@ -1768,6 +1889,185 @@ export default {
 .legend-color.booked {
   background: #dc3545;
   border-color: #dc3545;
+}
+
+.legend-color.selected {
+  background: #3498db;
+  border-color: #3498db;
+  box-shadow: 0 0 8px rgba(52, 152, 219, 0.6);
+}
+
+/* Booking Mode Selection Styles */
+.booking-mode-section {
+  margin-bottom: 30px;
+}
+
+.mode-section-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: white;
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+}
+
+.mode-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.mode-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(15px);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mode-card:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+}
+
+.mode-card.active {
+  background: rgba(52, 152, 219, 0.2);
+  border-color: #3498db;
+  box-shadow: 0 8px 32px rgba(52, 152, 219, 0.2);
+}
+
+.mode-icon {
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  font-size: 1.4rem;
+  color: rgba(255, 255, 255, 0.8);
+  transition: all 0.3s ease;
+}
+
+.mode-card.active .mode-icon {
+  background: rgba(52, 152, 219, 0.3);
+  color: #3498db;
+}
+
+.mode-info {
+  flex: 1;
+}
+
+.mode-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: white;
+  margin: 0 0 4px 0;
+}
+
+.mode-desc {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.mode-check {
+  font-size: 1.4rem;
+  color: #3498db;
+  animation: scaleIn 0.3s ease;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Selectable Spot Styles */
+.parking-spot-item.selectable {
+  cursor: pointer;
+}
+
+.parking-spot-item.selectable:hover {
+  transform: scale(1.1);
+  box-shadow: 0 8px 24px rgba(46, 204, 113, 0.4);
+  z-index: 10;
+}
+
+.parking-spot-item.selected {
+  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.4), 0 8px 24px rgba(52, 152, 219, 0.4);
+  transform: scale(1.1);
+  z-index: 10;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.4), 0 8px 24px rgba(52, 152, 219, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(52, 152, 219, 0.2), 0 8px 32px rgba(52, 152, 219, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.4), 0 8px 24px rgba(52, 152, 219, 0.4);
+  }
+}
+
+.parking-spot-item.selected .spot-number {
+  color: white;
+}
+
+.parking-spot-item.selected .spot-icon {
+  color: white;
+}
+
+/* Manual Selection Card */
+.manual-selection-card {
+  display: flex;
+  gap: 20px;
+  padding: 24px;
+  background: rgba(52, 152, 219, 0.1);
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(52, 152, 219, 0.3);
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(52, 152, 219, 0.1);
+  transition: all 0.3s ease;
+}
+
+.manual-selection-card.has-selection {
+  background: rgba(46, 204, 113, 0.1);
+  border-color: rgba(46, 204, 113, 0.3);
+  box-shadow: 0 8px 32px rgba(46, 204, 113, 0.15);
+}
+
+.manual-selection-card .card-icon {
+  color: #3498db;
+}
+
+.manual-selection-card.has-selection .card-icon {
+  color: #2ecc71;
+}
+
+.manual-selection-card .available-info {
+  background: rgba(52, 152, 219, 0.2);
+}
+
+.manual-selection-card.has-selection .available-info {
+  background: rgba(46, 204, 113, 0.2);
 }
 
 .auto-assignment-card {
