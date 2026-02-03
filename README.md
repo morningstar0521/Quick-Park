@@ -335,7 +335,7 @@ Content-Type: application/json
 ## Folder Structure
 
 ```
-vehicle_parking_app_23f2002762/
+quick_park/
 ├── backend/
 │   ├── app.py                 # Main Flask application with all routes
 │   ├── models.py              # SQLAlchemy database models
