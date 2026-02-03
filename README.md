@@ -160,9 +160,7 @@ Roll No: 23F2002762
 ### User Reports
 ![User Reports](screenshots/user-reports.png)
 
-**Live Demo**: 
-🔗 [[!App Demo]]([https://drive.google.com/file/d/11tH0qdzI6fYCOCPydmAen6B1m8f3uiWo/view?usp=sharing](https://drive.google.com/file/d/1jrwlxYofyQpCvyQZR5NuMYucI2GTs8mg/view?usp=sharing))
-
+**Live Demo**: 🔗 [Watch App Demo Video](https://drive.google.com/file/d/1jrwlxYofyQpCvyQZR5NuMYucI2GTs8mg/view?usp=sharing)
 ---
 
 ## Installation and Setup
