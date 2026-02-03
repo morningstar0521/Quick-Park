@@ -133,7 +133,9 @@ Quick Park addresses the inefficiencies of traditional parking management by dig
 
 ### Book Parking
 ![Book Parking](screenshots/book-parking-lots.png)
-![Book Parking](screenshots/book-parking.png)
+
+### Book Parking Option Selection
+![Book Parking Option Selection](screenshots/book-parking.png)
 
 ### Admin Dashboard
 ![Admin Dashboard](screenshots/admin-dashboard.png)
