@@ -46,7 +46,7 @@ export default {
     async login() {
       try {
         const loginRes = await axios.post(
-          "http://127.0.0.1:5000/api/login",
+          "/api/login",
           {
             email: this.email, 
             password: this.password,

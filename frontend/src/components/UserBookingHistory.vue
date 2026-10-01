@@ -196,7 +196,7 @@ export default {
       this.isLoading = true;
       try {
         console.log("Fetching user data and bookings...");
-        const res = await this.$axios.get("http://127.0.0.1:5000/api/user/dashboard");
+        const res = await this.$axios.get("/api/user/dashboard");
         const userData = res.data;
         
         if (userData.ok) {
@@ -262,7 +262,7 @@ export default {
       localStorage.removeItem('accessToken');
       delete this.$axios.defaults.headers.common['Authorization'];
 
-      this.$axios.post("http://127.0.0.1:5000/api/logout", {})
+      this.$axios.post("/api/logout", {})
         .finally(() => {
             if (force) {
                 alert("Session expired or unauthorized. Please log in again.");

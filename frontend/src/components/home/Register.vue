@@ -49,7 +49,7 @@ export default {
   methods: {
     async register() {
       try {
-        const res = await axios.post("http://127.0.0.1:5000/api/register", {
+        const res = await axios.post("/api/register", {
           fullName: this.fullName, 
           email: this.email,
           address: this.address,

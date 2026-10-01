@@ -11,6 +11,9 @@
 
 A modern, full-stack vehicle parking management system designed to streamline parking operations for administrators and provide a seamless booking experience for users.
 
+**Live App (AWS EC2)**: 🔗 [LIVE_URL](LIVE_URL)  
+**Demo Admin**: admin@gmail.com / Admin@1234
+
 ---
 
 ## Overview
@@ -228,6 +231,29 @@ MAIL_PORT=1025
 | Role | Email | Password |
 |------|-------|----------|
 | Admin | admin@gmail.com | Admin@1234 |
+
+---
+
+## Deployment (AWS)
+
+Deployed on a single **AWS EC2** instance (Ubuntu) using **Docker Compose**:
+
+| Container | Role |
+|-----------|------|
+| `web` | Caddy: serves the built Vue app, reverse-proxies `/api` to Flask, auto HTTPS (Let's Encrypt) |
+| `backend` | Flask API on Gunicorn |
+| `worker` | Celery worker + beat (scheduled emails) |
+| `redis` | Celery broker and Flask cache |
+
+SQLite data lives in a Docker volume so it survives restarts and redeploys.
+
+```bash
+# On the EC2 instance
+git clone https://github.com/morningstar0521/Quick-Park.git && cd Quick-Park
+bash deploy/ec2-setup.sh          # swap + Docker (log out and back in after)
+cp .env.example .env && nano .env # set DOMAIN, secrets
+docker compose up -d --build
+```
 
 ---
 

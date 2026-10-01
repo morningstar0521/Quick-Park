@@ -532,7 +532,7 @@ export default {
   methods: {
     async checkActiveBooking() {
       try {
-        const response = await this.$axios.get("http://127.0.0.1:5000/api/user/bookings");
+        const response = await this.$axios.get("/api/user/bookings");
         if (response.data.ok) {
           const activeBookings = response.data.bookings.filter(booking => booking.is_active);
           if (activeBookings.length > 0) {
@@ -548,7 +548,7 @@ export default {
     async fetchParkingLots() {
       this.loading = true;
       try {
-        const response = await this.$axios.get("http://127.0.0.1:5000/api/user/parking-lots");
+        const response = await this.$axios.get("/api/user/parking-lots");
         if (response.data.ok) {
           this.parkingLots = response.data.lots;
         } else {
@@ -571,7 +571,7 @@ export default {
       this.selectedSpot = null; 
       
       try {
-        const response = await this.$axios.get(`http://127.0.0.1:5000/api/user/parking-lots/${lot.id}/spots`);
+        const response = await this.$axios.get(`/api/user/parking-lots/${lot.id}/spots`);
         console.log("Parking spots response:", response.data);
         if (response.data.ok) {
           this.parkingSpots = response.data.spots;
@@ -681,7 +681,7 @@ export default {
           bookingData.spot_id = this.selectedSpot.id;
         }
 
-        const response = await this.$axios.post("http://127.0.0.1:5000/api/user/bookings", bookingData);
+        const response = await this.$axios.post("/api/user/bookings", bookingData);
         
         if (response.data.ok) {
           const spotAssignmentText = this.bookingMode === 'manual' 
@@ -729,7 +729,7 @@ export default {
       localStorage.removeItem('accessToken');
       delete this.$axios.defaults.headers.common['Authorization'];
       
-      this.$axios.post("http://127.0.0.1:5000/api/logout", {})
+      this.$axios.post("/api/logout", {})
         .finally(() => {
           if (force) {
             alert("Session expired. Please log in again.");

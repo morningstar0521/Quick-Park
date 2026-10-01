@@ -130,12 +130,12 @@ export default {
         let response;
         if (this.isEditing) {
           response = await this.$axios.put(
-            `http://127.0.0.1:5000/api/parking-lots/${this.form.id}`,
+            `/api/parking-lots/${this.form.id}`,
             payload
           );
         } else {
           response = await this.$axios.post(
-            "http://127.0.0.1:5000/api/parking-lots",
+            "/api/parking-lots",
             payload
           );
         }

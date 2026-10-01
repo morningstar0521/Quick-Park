@@ -87,13 +87,7 @@ def create_app():
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1) 
     jwt = JWTManager(app)
     
-    app.config['MAIL_SERVER'] = '127.0.0.1' 
-    app.config['MAIL_PORT'] = 1025 
-    app.config['MAIL_USE_TLS'] = False
-    app.config['MAIL_USE_SSL'] = False
-    app.config['MAIL_USERNAME'] = None
-    app.config['MAIL_PASSWORD'] = None
-    app.config['MAIL_DEFAULT_SENDER'] = 'noreply@quickpark.com'
+    # Mail settings come from Config (environment variables)
     mail.init_app(app)
     print(f"Mail configuration: {app.config['MAIL_SERVER']} {app.config['MAIL_PORT']}")
     
@@ -101,7 +95,7 @@ def create_app():
 
     CORS(
         app,
-        resources={r"/api/*": {"origins": ["http://localhost:8080", "http://127.0.0.1:8080"]}},
+        resources={r"/api/*": {"origins": os.getenv("CORS_ORIGINS", "http://localhost:8080,http://127.0.0.1:8080").split(",")}},
         supports_credentials=True,
         allow_headers=["Content-Type", "Authorization"],
         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
@@ -120,7 +114,7 @@ def create_app():
     with app.app_context():
         db.create_all()
         ADMIN_EMAIL = "admin@gmail.com"
-        ADMIN_PASSWORD = "Admin@1234"
+        ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "Admin@1234")
 
         admin = User.query.filter_by(email=ADMIN_EMAIL).first()
         if not admin:

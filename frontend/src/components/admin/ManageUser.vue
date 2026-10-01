@@ -212,7 +212,7 @@ export default {
     async fetchUsers() {
       try {
         const token = localStorage.getItem('accessToken');
-        const res = await this.$axios.get("http://127.0.0.1:5000/api/users/details", {
+        const res = await this.$axios.get("/api/users/details", {
           headers: { Authorization: `Bearer ${token}` },
         });
         this.users = res.data;
@@ -228,7 +228,7 @@ export default {
       if (confirm("Are you sure you want to delete this user and all associated bookings?")) {
         try {
           const token = localStorage.getItem('accessToken');
-          await this.$axios.delete(`http://127.0.0.1:5000/api/users/${id}`, {
+          await this.$axios.delete(`/api/users/${id}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           await this.fetchUsers();
@@ -245,7 +245,7 @@ export default {
       localStorage.removeItem('accessToken');
       delete axios.defaults.headers.common['Authorization'];
       
-      axios.post("http://127.0.0.1:5000/api/logout", {})
+      axios.post("/api/logout", {})
         .finally(() => {
           if (force) {
             alert("Session expired or unauthorized. Please log in again.");

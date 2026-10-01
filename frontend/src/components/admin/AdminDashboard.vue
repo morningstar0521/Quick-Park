@@ -285,7 +285,7 @@ export default {
   methods: {
     async fetchMetrics() {
       try {
-        const response = await axios.get("http://127.0.0.1:5000/api/admin/metrics");
+        const response = await axios.get("/api/admin/metrics");
         if (response.data.ok) {
           this.metrics = response.data.metrics;
         } else {
@@ -301,7 +301,7 @@ export default {
 
     async fetchRecentBookings() {
       try {
-        const response = await axios.get("http://127.0.0.1:5000/api/admin/recent-bookings", {
+        const response = await axios.get("/api/admin/recent-bookings", {
           headers: {
             "Authorization": `Bearer ${localStorage.getItem('accessToken')}`
           }
@@ -333,7 +333,7 @@ export default {
 
     async renderOccupancyChart() {
       try {
-        const response = await axios.get("http://127.0.0.1:5000/api/admin/occupancy-data", {
+        const response = await axios.get("/api/admin/occupancy-data", {
           headers: {
             "Authorization": `Bearer ${localStorage.getItem('accessToken')}`
           }
@@ -549,7 +549,7 @@ export default {
 
     async renderRevenueChart() {
       try {
-        const response = await axios.get("http://127.0.0.1:5000/api/admin/revenue-data", {
+        const response = await axios.get("/api/admin/revenue-data", {
           headers: {
             "Authorization": `Bearer ${localStorage.getItem('accessToken')}`
           }
@@ -741,7 +741,7 @@ export default {
 
     async fetchParkingLots() {
       try {
-        const response = await axios.get("http://127.0.0.1:5000/api/admin/parking-lots", {
+        const response = await axios.get("/api/admin/parking-lots", {
           headers: {
             "Authorization": `Bearer ${localStorage.getItem('accessToken')}`
           }
@@ -764,7 +764,7 @@ export default {
 
     async fetchParkingLotsAlternative() {
       try {
-        const response = await axios.get("http://127.0.0.1:5000/api/parking-lots", {
+        const response = await axios.get("/api/parking-lots", {
           headers: {
             "Authorization": `Bearer ${localStorage.getItem('accessToken')}`
           }
@@ -919,7 +919,7 @@ export default {
       localStorage.removeItem('accessToken');
       delete axios.defaults.headers.common['Authorization'];
       
-      axios.post("http://127.0.0.1:5000/api/logout", {})
+      axios.post("/api/logout", {})
         .finally(() => {
           if (force) {
             alert("Session expired or unauthorized. Please log in again.");

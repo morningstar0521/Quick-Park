@@ -268,7 +268,7 @@ export default {
         };
         
         const res = await this.$axios.put(
-          "http://127.0.0.1:5000/api/user/profile",
+          "/api/user/profile",
           payload
         );
 

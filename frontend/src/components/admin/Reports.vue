@@ -377,7 +377,7 @@ export default {
     async fetchParkingLots() {
       try {
         const token = localStorage.getItem('accessToken');
-        const response = await this.$axios.get("http://127.0.0.1:5000/api/parking-lots", {
+        const response = await this.$axios.get("/api/parking-lots", {
           headers: { Authorization: `Bearer ${token}` }
         });
         this.parkingLots = response.data;
@@ -498,7 +498,7 @@ export default {
     async fetchSlotReports(lotId) {
       try {
         const token = localStorage.getItem('accessToken');
-        const response = await this.$axios.get(`http://127.0.0.1:5000/api/admin/reports/slots/${lotId}`, {
+        const response = await this.$axios.get(`/api/admin/reports/slots/${lotId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -518,7 +518,7 @@ export default {
     async fetchLotAnalytics(lotId) {
       try {
         const token = localStorage.getItem('accessToken');
-        const response = await this.$axios.get(`http://127.0.0.1:5000/api/admin/reports/lot-analytics/${lotId}`, {
+        const response = await this.$axios.get(`/api/admin/reports/lot-analytics/${lotId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -804,7 +804,7 @@ export default {
         console.log('Lot ID:', this.selectedLot.id);
         
         console.log('Testing JWT endpoint...');
-        const jwtTest = await this.$axios.get('http://127.0.0.1:5000/api/admin/reports/test-jwt', {
+        const jwtTest = await this.$axios.get('/api/admin/reports/test-jwt', {
           headers: { Authorization: `Bearer ${token}` }
         });
         console.log('JWT test response:', jwtTest.data);
@@ -820,7 +820,7 @@ export default {
         }
 
         console.log('JWT verified, downloading CSV...');
-        const response = await this.$axios.get(`http://127.0.0.1:5000/api/admin/reports/lot-csv/${this.selectedLot.id}`, {
+        const response = await this.$axios.get(`/api/admin/reports/lot-csv/${this.selectedLot.id}`, {
           headers: { Authorization: `Bearer ${token}` },
           responseType: 'blob'
         });
@@ -923,7 +923,7 @@ export default {
       localStorage.removeItem('accessToken');
       delete axios.defaults.headers.common['Authorization'];
       
-      axios.post("http://127.0.0.1:5000/api/logout", {})
+      axios.post("/api/logout", {})
         .finally(() => {
           if (force) {
             alert("Session expired or unauthorized. Please log in again.");

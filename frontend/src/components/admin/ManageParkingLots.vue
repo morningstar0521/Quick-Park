@@ -313,7 +313,7 @@ export default {
     async fetchParkingLots() {
       try {
         const token = localStorage.getItem('accessToken');
-        const response = await this.$axios.get("http://127.0.0.1:5000/api/parking-lots", {
+        const response = await this.$axios.get("/api/parking-lots", {
           headers: { Authorization: `Bearer ${token}` },
         });
         this.parkingLots = response.data.map(lot => this.calculateLotRevenue(lot));
@@ -364,7 +364,7 @@ export default {
         this.selectedLot = null;
       } else {
         try {
-          const response = await this.$axios.get(`http://127.0.0.1:5000/api/admin/parking-lots/${lot.id}/spots`);
+          const response = await this.$axios.get(`/api/admin/parking-lots/${lot.id}/spots`);
           console.log("Admin parking spots response:", response.data);
           if (response.data.ok) {
             const spots = response.data.spots.map(spot => ({
@@ -431,7 +431,7 @@ export default {
         }
         if (confirm("Are you sure you want to permanently delete this parking lot?")) {
           const token = localStorage.getItem('accessToken');
-          await this.$axios.delete(`http://127.0.0.1:5000/api/parking-lots/${id}`, {
+          await this.$axios.delete(`/api/parking-lots/${id}`, {
               headers: {
                   'Authorization': `Bearer ${token}`
               }
@@ -452,7 +452,7 @@ export default {
       delete axios.defaults.headers.common['Authorization']; 
       
       try {
-        await this.$axios.post("http://127.0.0.1:5000/api/logout", {}, {
+        await this.$axios.post("/api/logout", {}, {
             headers: { Authorization: `Bearer ${token}` }
         });
       } catch (err) {

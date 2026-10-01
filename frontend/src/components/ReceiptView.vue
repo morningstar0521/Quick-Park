@@ -137,7 +137,7 @@ export default {
         }
 
         const token = localStorage.getItem('accessToken');
-        const response = await this.$axios.get(`http://127.0.0.1:5000/api/user/bookings/${bookingId}/receipt`, {
+        const response = await this.$axios.get(`/api/user/bookings/${bookingId}/receipt`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 

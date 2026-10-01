@@ -171,12 +171,12 @@ export default {
 
         const token = localStorage.getItem('accessToken');
         
-        const lotResponse = await this.$axios.get(`http://127.0.0.1:5000/api/parking-lots/${lotId}`, {
+        const lotResponse = await this.$axios.get(`/api/parking-lots/${lotId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         this.lotData = lotResponse.data;
 
-        const slotResponse = await this.$axios.get(`http://127.0.0.1:5000/api/admin/reports/slot/${slotId}`, {
+        const slotResponse = await this.$axios.get(`/api/admin/reports/slot/${slotId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         

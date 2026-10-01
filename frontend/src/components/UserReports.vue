@@ -189,7 +189,7 @@ export default {
     },
     async fetchUserReports() {
       try {
-        const response = await this.$axios.get("http://127.0.0.1:5000/api/user/reports");
+        const response = await this.$axios.get("/api/user/reports");
         if (response.data.ok) {
           this.userStats = response.data.stats;
           this.bookingsData = response.data.bookings || [];
@@ -492,7 +492,7 @@ export default {
 
     async downloadCSV() {
       try {
-        const response = await this.$axios.get("http://127.0.0.1:5000/api/user/reports/csv", {
+        const response = await this.$axios.get("/api/user/reports/csv", {
           responseType: 'blob'
         });
         
@@ -513,7 +513,7 @@ export default {
 
     async downloadPDF() {
       try {
-        const response = await this.$axios.get("http://127.0.0.1:5000/api/user/reports/pdf", {
+        const response = await this.$axios.get("/api/user/reports/pdf", {
           responseType: 'blob'
         });
         

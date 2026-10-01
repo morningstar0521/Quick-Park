@@ -228,7 +228,7 @@ export default {
     async fetchUserData() {
       try {
         console.log("Fetching user data...");
-        const res = await this.$axios.get("http://127.0.0.1:5000/api/user/dashboard"); 
+        const res = await this.$axios.get("/api/user/dashboard"); 
         const userData = res.data;
         console.log("User dashboard response:", userData);
         
@@ -278,7 +278,7 @@ export default {
     async refreshBookings() {
       try {
         console.log("Refreshing bookings...");
-        const response = await this.$axios.get("http://127.0.0.1:5000/api/user/bookings");
+        const response = await this.$axios.get("/api/user/bookings");
         console.log("Bookings response:", response.data);
         if (response.data.ok) {
           this.bookings = response.data.bookings;
@@ -328,7 +328,7 @@ export default {
       
       try {
         const res = await this.$axios.post(
-          `http://127.0.0.1:5000/api/bookings/park-out`,
+          `/api/bookings/park-out`,
           { bookingId: booking.id }
         );
         
@@ -399,7 +399,7 @@ export default {
       localStorage.removeItem('accessToken');
       delete this.$axios.defaults.headers.common['Authorization'];
 
-      this.$axios.post("http://127.0.0.1:5000/api/logout", {})
+      this.$axios.post("/api/logout", {})
         .finally(() => {
             if (force) {
                 alert("Session expired or unauthorized. Please log in again.");
