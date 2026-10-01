@@ -1,12 +1,12 @@
 <div align="center">
 
-# 🅿️ Quick Park
+# Quick Park
 
 **A full-stack parking management platform: users find and book parking spots, admins run their lots from a live dashboard.**
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-AWS%20EC2-FF9900?style=for-the-badge&logo=amazonaws&logoColor=white)](https://65-2-59-216.sslip.io)
 [![Demo Video](https://img.shields.io/badge/Demo%20Video-Watch-red?style=for-the-badge&logo=googledrive&logoColor=white)](https://drive.google.com/file/d/1jrwlxYofyQpCvyQZR5NuMYucI2GTs8mg/view?usp=sharing)
-[![Award](https://img.shields.io/badge/🏆%20Best%20Course%20Project-IIT%20Madras-8A2BE2?style=for-the-badge)](https://drive.google.com/file/d/11tH0qdzI6fYCOCPydmAen6B1m8f3uiWo/view?usp=sharing)
+[![Award](https://img.shields.io/badge/Best%20Course%20Project-IIT%20Madras-8A2BE2?style=for-the-badge)](https://drive.google.com/file/d/11tH0qdzI6fYCOCPydmAen6B1m8f3uiWo/view?usp=sharing)
 
 ![Vue.js](https://img.shields.io/badge/Vue.js_3-4FC08D?logo=vuedotjs&logoColor=white)
 ![Flask](https://img.shields.io/badge/Flask-000000?logo=flask&logoColor=white)
@@ -22,7 +22,7 @@
 
 </div>
 
-## 🚀 Try It Live
+## Try It Live
 
 **URL:** https://65-2-59-216.sslip.io
 
@@ -32,29 +32,31 @@
 | User | Register a new account on the home page | - |
 
 > This is a shared public demo. Data may be reset at any time.
+>
+> **Emails are live.** Register with a real email address to receive the booking confirmation (with QR code), the receipt after park-out and password-reset OTPs.
 
 ---
 
-## 📑 Table of Contents
+## Table of Contents
 
-- [The Problem](#-the-problem)
-- [Features](#-features)
-- [Screenshots](#-screenshots)
-- [Tech Stack](#-tech-stack)
-- [System Architecture](#-system-architecture)
-- [Data Model](#-data-model)
-- [Engineering Decisions](#-engineering-decisions)
-- [Deployment (AWS)](#-deployment-aws)
-- [Run Locally](#-run-locally)
-- [API Reference](#-api-reference)
-- [Project Structure](#-project-structure)
-- [Known Limitations & Roadmap](#-known-limitations--roadmap)
-- [Recognition](#-recognition)
-- [Author](#-author)
+- [The Problem](#the-problem)
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Tech Stack](#tech-stack)
+- [System Architecture](#system-architecture)
+- [Data Model](#data-model)
+- [Engineering Decisions](#engineering-decisions)
+- [Deployment (AWS)](#deployment-aws)
+- [Run Locally](#run-locally)
+- [API Reference](#api-reference)
+- [Project Structure](#project-structure)
+- [Known Limitations & Roadmap](#known-limitations--roadmap)
+- [Recognition](#recognition)
+- [Author](#author)
 
 ---
 
-## 🎯 The Problem
+## The Problem
 
 Many parking facilities (malls, offices, residential societies) still use paper tickets and manual billing. Drivers can't see free spots in advance, and operators have no clear view of occupancy or revenue.
 
@@ -62,7 +64,7 @@ Many parking facilities (malls, offices, residential societies) still use paper 
 
 ---
 
-## ✨ Features
+## Features
 
 ### For Users
 - **Browse lots** with live free-spot counts and hourly rates
@@ -87,7 +89,7 @@ Many parking facilities (malls, offices, residential societies) still use paper 
 
 ---
 
-## 📸 Screenshots
+## Screenshots
 
 | User Dashboard | Book Parking |
 |:---:|:---:|
@@ -101,7 +103,7 @@ Many parking facilities (malls, offices, residential societies) still use paper 
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
 | Layer | Technology | Why |
 |-------|------------|-----|
@@ -110,14 +112,14 @@ Many parking facilities (malls, offices, residential societies) still use paper 
 | Backend | Flask 2.2, Flask-SQLAlchemy | Lightweight REST API with an ORM |
 | Auth | Flask-JWT-Extended, Werkzeug hashing | Stateless JWT auth with role claims (admin / user) |
 | Background Jobs | Celery + Redis | Scheduled jobs (monthly reports, reminders) outside the request cycle |
-| Caching | Flask-Caching (Redis) | Caches the admin metrics endpoint for 30 seconds |
+| Caching | Flask-Caching (Redis) | Caches the 4 admin dashboard endpoints for 30 seconds |
 | Email | Flask-Mail, Jinja2 templates, qrcode, ReportLab | HTML emails with QR codes, PDF receipts |
 | Database | SQLite | Zero-setup, single-file DB that fits a single-server demo |
 | Infrastructure | Docker Compose, Caddy, Gunicorn, AWS EC2 | One-command deploy with automatic HTTPS |
 
 ---
 
-## 🏗 System Architecture
+## System Architecture
 
 ```mermaid
 flowchart LR
@@ -136,11 +138,11 @@ flowchart LR
 1. Caddy terminates HTTPS and serves the built Vue app.
 2. Calls to `/api/*` go to Flask on the same domain, so the browser needs no CORS setup.
 3. Flask verifies the JWT and checks the `role` claim on every protected route.
-4. Celery beat triggers scheduled jobs. Redis is the message broker, and also the cache.
+4. Celery beat triggers scheduled jobs. Redis is the message broker, and also the cache for the admin dashboard.
 
 ---
 
-## 🗄 Data Model
+## Data Model
 
 ```mermaid
 erDiagram
@@ -186,7 +188,7 @@ erDiagram
 
 ---
 
-## 🧠 Engineering Decisions
+## Engineering Decisions
 
 | Decision | Reasoning | Trade-off |
 |----------|-----------|-----------|
@@ -220,7 +222,7 @@ docker compose exec backend python tests/test_concurrency.py
 
 ---
 
-## ☁️ Deployment (AWS)
+## Deployment (AWS)
 
 Deployed on a single **AWS EC2** instance (Ubuntu, Mumbai region) with **Docker Compose**:
 
@@ -237,6 +239,7 @@ Deployed on a single **AWS EC2** instance (Ubuntu, Mumbai region) with **Docker 
 - **Multi-stage Dockerfile** for the frontend: Node builds the app, and only the static files ship in the final Caddy image
 - **Persistent data:** SQLite and TLS certificates live in Docker volumes, so they survive redeploys
 - **Secrets** are loaded from a `.env` file that is never committed
+- **Transactional email** in production through Gmail SMTP (TLS, App Password)
 
 **Deploy / update**
 ```bash
@@ -251,7 +254,7 @@ docker compose up -d --build
 
 ---
 
-## 💻 Run Locally
+## Run Locally
 
 ### Option 1: Docker (recommended)
 ```bash
@@ -297,7 +300,7 @@ The Vue dev server forwards `/api` calls to Flask, so no extra config is needed.
 
 ---
 
-## 📡 API Reference
+## API Reference
 
 All protected routes need the header `Authorization: Bearer <token>`.
 
@@ -337,7 +340,7 @@ All protected routes need the header `Authorization: Bearer <token>`.
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/admin/metrics` | Dashboard KPIs (cached 30s) |
-| GET | `/api/admin/occupancy-data` · `/revenue-data` · `/recent-bookings` | Chart and table data |
+| GET | `/api/admin/occupancy-data` · `/revenue-data` · `/recent-bookings` | Chart and table data (cached 30s) |
 | GET/POST | `/api/parking-lots` | List / create lots |
 | PUT/DELETE | `/api/parking-lots/:id` | Update / delete a lot |
 | GET | `/api/admin/parking-lots/:id/spots` | Spot status with current customer |
@@ -350,7 +353,7 @@ All protected routes need the header `Authorization: Bearer <token>`.
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 Quick-Park/
@@ -377,7 +380,7 @@ Quick-Park/
 
 ---
 
-## 🧭 Known Limitations & Roadmap
+## Known Limitations & Roadmap
 
 Listed openly, since these are the next things I would fix:
 
@@ -390,7 +393,7 @@ Listed openly, since these are the next things I would fix:
 
 ---
 
-## 🏆 Recognition
+## Recognition
 
 **Best Course Project Award: Modern Application Development II**
 IIT Madras BS Degree Program (Diploma, Sept 2025)
@@ -398,7 +401,7 @@ IIT Madras BS Degree Program (Diploma, Sept 2025)
 
 ---
 
-## 👤 Author
+## Author
 
 **Shubh Ghiya** · Dual Degree, IIT Madras & UIT RGPV Bhopal
 
@@ -406,4 +409,4 @@ IIT Madras BS Degree Program (Diploma, Sept 2025)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Shubh%20Ghiya-0A66C2?logo=linkedin)](https://linkedin.com/in/shubh-g-334a2a281)
 [![Email](https://img.shields.io/badge/Email-ghiyashubh23%40gmail.com-D14836?logo=gmail&logoColor=white)](mailto:ghiyashubh23@gmail.com)
 
-If you found this project useful, consider giving it a ⭐
+If you found this project useful, consider giving it a star.
