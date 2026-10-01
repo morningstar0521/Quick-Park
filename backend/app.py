@@ -16,7 +16,8 @@ from flask_jwt_extended import (
 )
 from flask_jwt_extended import decode_token
 from sqlalchemy.orm import joinedload
-from sqlalchemy import func
+from sqlalchemy import func, text
+from sqlalchemy.exc import IntegrityError, OperationalError
 from tasks import send_receipt_email_task, notify_new_parking_lot
 from jinja2 import Template
 import qrcode
@@ -76,6 +77,55 @@ def update_parking_spots_for_lot(lot):
     db.session.commit()
 
 
+# ---------------------------------------------------------------------------
+# Concurrency control for bookings
+#
+# Two layers protect against race conditions (double booking, double park-out,
+# lost counter updates) when many requests arrive at the same time:
+#   1. Atomic conditional UPDATEs ("compare-and-set"): a spot is claimed with
+#      UPDATE ... SET is_booked = 1 WHERE id = ? AND is_booked = 0. The database
+#      executes this as one locked step, so only one request can change the row;
+#      every other request sees rowcount 0 and is rejected or retried.
+#   2. Partial UNIQUE indexes as a final guarantee at the database level:
+#      at most one active booking (end_time IS NULL) per spot and per user.
+# Counters (occupied_spots, revenue_generated) are updated with SQL arithmetic
+# (col = col + x) instead of read-modify-write in Python, so no update is lost.
+# Works on SQLite (current) and PostgreSQL (with_for_update adds row locks).
+# ---------------------------------------------------------------------------
+MAX_SPOT_CLAIM_ATTEMPTS = 5
+
+CONCURRENCY_INDEXES = {
+    "uq_active_booking_per_spot":
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_active_booking_per_spot "
+        "ON bookings (spot_id) WHERE end_time IS NULL",
+    "uq_active_booking_per_user":
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_active_booking_per_user "
+        "ON bookings (user_id) WHERE end_time IS NULL",
+}
+
+
+def ensure_concurrency_indexes():
+    """Create the partial unique indexes. Safe to run on every start."""
+    for name, sql in CONCURRENCY_INDEXES.items():
+        try:
+            db.session.execute(text(sql))
+            db.session.commit()
+        except Exception as e:
+            # Existing rows that break the rule must be cleaned up first;
+            # the app still runs with the atomic UPDATE protection.
+            db.session.rollback()
+            print(f"WARNING: could not create index {name}: {e}")
+
+
+def claim_spot(spot_id):
+    """Atomically mark a free spot as booked. Returns True only for the winner."""
+    claimed = ParkingSpot.query.filter(
+        ParkingSpot.id == spot_id,
+        ParkingSpot.is_booked == False
+    ).update({ParkingSpot.is_booked: True}, synchronize_session=False)
+    return claimed == 1
+
+
 def create_app():
     app = Flask(__name__, static_folder=None)
     app.config.from_object(Config)
@@ -125,6 +175,8 @@ def create_app():
             print("Admin is Created")
         else:
             print("Admin already exists in DB")
+
+        ensure_concurrency_indexes()
             
 
 
@@ -656,34 +708,57 @@ def create_app():
             return jsonify({"ok": False, "message": "Booking is already completed"}), 400
             
         end_time = datetime.now(timezone('Asia/Kolkata'))
-        booking.end_time = end_time
-        lot = ParkingLot.query.get(booking.lot_id)
         
-        start_time = booking.start_time
-    
-        if start_time.tzinfo is None:
+        try:
+            # Atomic close: only one request can move end_time from NULL to a value,
+            # so a double-click on "Park Out" cannot bill or free the spot twice
+            closed = Booking.query.filter(
+                Booking.id == booking.id,
+                Booking.end_time.is_(None)
+            ).update({Booking.end_time: end_time}, synchronize_session=False)
             
-            start_time = start_time.replace(tzinfo=timezone('Asia/Kolkata'))
-        duration_seconds = (end_time - start_time).total_seconds()
-        duration_hours = duration_seconds / 3600
-        duration_minutes = duration_seconds / 60
-        hours_charged = max(1, math.ceil(duration_hours))
-        rate = lot.rate_per_hour if lot else 0.0
-        final_amount = hours_charged * rate
-        booking.amount_paid = final_amount
-        spot = ParkingSpot.query.filter_by(lot_id=booking.lot_id, id=booking.spot_id).first()
+            if closed != 1:
+                db.session.rollback()
+                return jsonify({"ok": False, "message": "Booking is already completed"}), 409
+            
+            lot = ParkingLot.query.get(booking.lot_id)
+            
+            start_time = booking.start_time
         
-        if lot:
-            lot.occupied_spots = max(0, lot.occupied_spots - 1)
-            lot.revenue_generated += final_amount
-        
-        if spot:
-            spot.is_booked = False
+            if start_time.tzinfo is None:
+                
+                start_time = start_time.replace(tzinfo=timezone('Asia/Kolkata'))
+            duration_seconds = (end_time - start_time).total_seconds()
+            duration_hours = duration_seconds / 3600
+            duration_minutes = duration_seconds / 60
+            hours_charged = max(1, math.ceil(duration_hours))
+            rate = lot.rate_per_hour if lot else 0.0
+            final_amount = hours_charged * rate
+            booking.amount_paid = final_amount
+            spot = ParkingSpot.query.filter_by(lot_id=booking.lot_id, id=booking.spot_id).first()
             
-            spot.spot_revenue = 0.0 
-            spot.duration_hours = 0.0 
+            if lot:
+                # Atomic counter updates (no lost updates between parallel park-outs)
+                ParkingLot.query.filter(
+                    ParkingLot.id == lot.id,
+                    ParkingLot.occupied_spots > 0
+                ).update({ParkingLot.occupied_spots: ParkingLot.occupied_spots - 1}, synchronize_session=False)
+                ParkingLot.query.filter(ParkingLot.id == lot.id).update(
+                    {ParkingLot.revenue_generated: func.coalesce(ParkingLot.revenue_generated, 0) + final_amount},
+                    synchronize_session=False
+                )
             
-        db.session.commit()
+            if spot:
+                spot.is_booked = False
+                
+                spot.spot_revenue = 0.0 
+                spot.duration_hours = 0.0 
+                
+            db.session.commit()
+        except OperationalError as e:
+            db.session.rollback()
+            print(f"Database busy during park-out: {e}")
+            return jsonify({"ok": False, "message": "Server is busy. Please try again."}), 503
         
         try:
             send_receipt_email_task(booking.id)
@@ -927,22 +1002,39 @@ def create_app():
                 if spot_is_booked or selected_spot.is_booked:
                     return jsonify({"ok": False, "message": "Selected spot is no longer available"}), 400
                 
+                # Atomic claim: if another user booked this spot a moment ago, we lose
+                if not claim_spot(selected_spot.id):
+                    db.session.rollback()
+                    return jsonify({"ok": False, "message": "This spot was just booked by someone else. Please choose another spot."}), 409
+                
                 available_spot = selected_spot
             else:
-                available_spot = ParkingSpot.query.filter(
-                    ParkingSpot.lot_id == lot_id,
-                    ParkingSpot.is_booked == False
-                ).first()
+                # Auto-assign: claim the first free spot; if another request grabs it
+                # first, retry with the next free spot
+                available_spot = None
+                for _ in range(MAX_SPOT_CLAIM_ATTEMPTS):
+                    candidate = ParkingSpot.query.filter(
+                        ParkingSpot.lot_id == lot_id,
+                        ParkingSpot.is_booked == False
+                    ).order_by(ParkingSpot.spot_number).with_for_update(skip_locked=True).first()
+                    
+                    if not candidate:
+                        break
+                    
+                    spot_is_booked = Booking.query.filter(
+                        Booking.spot_id == candidate.id,
+                        Booking.end_time.is_(None)
+                    ).first()
+                    
+                    if spot_is_booked:
+                        break
+                    
+                    if claim_spot(candidate.id):
+                        available_spot = candidate
+                        break
                 
                 if not available_spot:
-                    return jsonify({"ok": False, "message": "No available spots in this lot"}), 400
-                
-                spot_is_booked = Booking.query.filter(
-                    Booking.spot_id == available_spot.id,
-                    Booking.end_time.is_(None)
-                ).first()
-                
-                if spot_is_booked:
+                    db.session.rollback()
                     return jsonify({"ok": False, "message": "No available spots in this lot"}), 400
             
             booking = Booking(
@@ -955,13 +1047,21 @@ def create_app():
             
             db.session.add(booking)
             
-            lot = ParkingLot.query.get(lot_id)
-            if lot:
-                lot.occupied_spots += 1
+            # Atomic counter update (no lost updates under concurrency)
+            ParkingLot.query.filter(ParkingLot.id == lot_id).update(
+                {ParkingLot.occupied_spots: func.coalesce(ParkingLot.occupied_spots, 0) + 1},
+                synchronize_session=False
+            )
             
-            available_spot.is_booked = True
-            
-            db.session.commit()
+            try:
+                db.session.commit()
+            except IntegrityError as e:
+                # Unique index caught a race the checks above could not see
+                # (e.g. the same user double-clicking "Book")
+                db.session.rollback()
+                if "spot" in str(e.orig).lower():
+                    return jsonify({"ok": False, "message": "This spot was just booked by someone else. Please try again."}), 409
+                return jsonify({"ok": False, "message": "You already have an active booking"}), 409
             
             user = User.query.get(user_id)
             lot = ParkingLot.query.get(lot_id)
@@ -1021,6 +1121,10 @@ def create_app():
                 }
             }), 201
             
+        except OperationalError as e:
+            db.session.rollback()
+            print(f"Database busy while creating booking: {e}")
+            return jsonify({"ok": False, "message": "Server is busy. Please try again."}), 503
         except Exception as e:
             db.session.rollback()
             print(f"Error creating booking: {e}")
