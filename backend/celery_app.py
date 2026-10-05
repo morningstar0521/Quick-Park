@@ -46,11 +46,12 @@ celery.conf.beat_schedule = {
         'schedule': crontab(minute='0', hour='0', day_of_month='1'),
         # 'schedule': crontab(minute='*', hour='*'), 
     },
-    'send-evening-reminders': {
-        'task': 'tasks.send_evening_reminders',
-        'schedule': crontab(hour='20', minute='0'),
-        # 'schedule': crontab(minute='*', hour='*'), 
-    },
+    # Disabled: daily 8 PM reminder emails (uncomment to re-enable)
+    # 'send-evening-reminders': {
+    #     'task': 'tasks.send_evening_reminders',
+    #     'schedule': crontab(hour='20', minute='0'),
+    #     # 'schedule': crontab(minute='*', hour='*'), 
+    # },
 }
 
 class ContextTask(celery.Task):
